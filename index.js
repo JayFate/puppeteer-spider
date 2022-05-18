@@ -16,7 +16,7 @@ const sleep = async (timeout = 0) => {
 };
 
 const browser = await puppeteer.launch({
-  headless: false,
+  // headless: false,
   // args: ["--start-maximized"],
   args: [`--window-size=1920,1080`],
   defaultViewport: {
@@ -34,7 +34,7 @@ let pageTotal = await switchPageLiArr[switchPageLiArr.length - 1].evaluate(
 );
 pageTotal = parseInt(pageTotal);
 console.log(`pageTotal`, pageTotal);
-pageTotal = 3;
+// pageTotal = 3;
 const pageUrls = Array.from({ length: pageTotal })
   .map((v, k) => k + 1)
   .map((n) => getUrl(n));
@@ -44,8 +44,8 @@ console.log(`pageUrls`, pageUrls);
 let postIds = await Promise.all(
   pageUrls.map(async (url, index) => {
     const newPage = await browser.newPage();
-    // await sleep(10 * index);
-    await sleep(3);
+    await sleep(3 * index);
+    // await sleep(3);
     await newPage.goto(url);
     await sleep(3);
     const shareButtons = Array.from(await newPage.$$(".share-title"));
@@ -57,7 +57,7 @@ let postIds = await Promise.all(
     postIds = await Promise.all(postIds);
     // postIds = postIds.map((postId) => parseInt(postId));
     console.log(`postIds`, postIds);
-
+    await newPage.close();
     return postIds;
   })
 );
@@ -65,19 +65,19 @@ postIds = postIds.flat();
 console.log(`postIds`, postIds);
 
 const contents = [];
-const subPage = await browser.newPage();
 const getContent = async (url) => {
-  await sleep(1);
+  const subPage = await browser.newPage();
   await subPage.goto(url);
   await sleep(1);
 
   const contentElement = Array.from(await subPage.$$(".recruit-content"))[0];
   const contentText = await contentElement.evaluate((node) => node.innerText);
+  await subPage.close();
   return contentText;
 };
 for (const postId of postIds) {
   const postUrl = getPostUrl(postId);
-  // console.log(`postUrl`, postUrl);
+  console.log(`postUrl`, postUrl);
   // await sleep(10 * i);
   let contentText;
   while (!contentText) {
@@ -91,7 +91,7 @@ for (const postId of postIds) {
   contents.push(contentText);
 }
 console.log(contents);
-fs.writeFileSync("./output.txt", contents.join(""));
+fs.writeFileSync("./output.txt", contents.join("~".repeat(20)));
 // console.log(postIds);
 
 await browser.close();
